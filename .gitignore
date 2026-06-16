@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+
+# Editors
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+
+# Data and generated artifacts
+data/*
+!data/.gitkeep
+outputs/*
+!outputs/.gitkeep
+checkpoints/
+runs/
+wandb/
+mlruns/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Model files
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# Logs
+*.log
