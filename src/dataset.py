@@ -2,6 +2,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import torch
 from torch.utils.data import Dataset
 
 
@@ -17,12 +18,21 @@ CLASS_NAMES = [
 
 
 class AgricultureVisionDataset(Dataset):
-    """Dataset skeleton for Agriculture Vision semantic segmentation."""
+    """Agriculture Vision dataset for multiclass semantic segmentation."""
 
-    def __init__(self, root, split="train", transforms=None):
+    def __init__(
+        self,
+        root,
+        split="train",
+        transforms=None,
+        use_nir=False,
+        return_valid_mask=False,
+    ):
         self.root = Path(root)
         self.split = split
         self.transforms = transforms
+        self.use_nir = use_nir
+        self.return_valid_mask = return_valid_mask
         self.image_paths = sorted((self.root / split / "images").glob("*.jpg"))
 
     def __len__(self):
@@ -30,21 +40,48 @@ class AgricultureVisionDataset(Dataset):
 
     def __getitem__(self, index):
         image_path = self.image_paths[index]
-        image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-        mask = self._load_mask(image_path.stem)
+        image = self._load_image(image_path)
+        height, width = image.shape[:2]
+        mask = self._load_mask(image_path.stem, shape=(height, width))
+        valid_mask = self._load_valid_mask(image_path.stem, shape=(height, width))
 
         if self.transforms:
-            augmented = self.transforms(image=image, mask=mask)
+            augmented = self.transforms(image=image, mask=mask, masks=[valid_mask])
             image = augmented["image"]
             mask = augmented["mask"]
+            valid_mask = augmented["masks"][0]
 
-        return image, mask
+        sample = {
+            "image": self._to_image_tensor(image),
+            "mask": torch.as_tensor(mask, dtype=torch.long),
+            "id": image_path.stem,
+        }
 
-    def _load_mask(self, sample_id):
+        if self.return_valid_mask:
+            sample["valid_mask"] = torch.as_tensor(valid_mask > 0, dtype=torch.bool)
+
+        return sample
+
+    def _load_image(self, image_path):
+        image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
+        if image is None:
+            raise FileNotFoundError(f"Could not read image: {image_path}")
+
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        if not self.use_nir:
+            return image
+
+        nir_path = self.root / self.split / "nir" / f"{image_path.stem}.jpg"
+        nir = cv2.imread(str(nir_path), cv2.IMREAD_GRAYSCALE)
+        if nir is None:
+            raise FileNotFoundError(f"Could not read NIR image: {nir_path}")
+
+        return np.dstack([image, nir])
+
+    def _load_mask(self, sample_id, shape):
         """Merge class-specific binary masks into one multiclass mask."""
-        mask = np.zeros((512, 512), dtype=np.uint8)
+        mask = np.zeros(shape, dtype=np.uint8)
         labels_dir = self.root / self.split / "labels"
 
         for class_index, class_name in enumerate(CLASS_NAMES[1:], start=1):
@@ -56,3 +93,18 @@ class AgricultureVisionDataset(Dataset):
             mask[class_mask > 0] = class_index
 
         return mask
+
+    def _load_valid_mask(self, sample_id, shape):
+        mask_path = self.root / self.split / "masks" / f"{sample_id}.png"
+        valid_mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
+
+        if valid_mask is None:
+            return np.ones(shape, dtype=np.uint8)
+
+        return valid_mask
+
+    @staticmethod
+    def _to_image_tensor(image):
+        image = image.astype(np.float32) / 255.0
+        image = np.transpose(image, (2, 0, 1))
+        return torch.from_numpy(image)
