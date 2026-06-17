@@ -33,7 +33,11 @@ class AgricultureVisionDataset(Dataset):
         self.transforms = transforms
         self.use_nir = use_nir
         self.return_valid_mask = return_valid_mask
-        self.image_paths = sorted((self.root / split / "images").glob("*.jpg"))
+        self.image_paths = sorted((self.root / split / "images" / "rgb").glob("*.jpg"))
+
+        if not self.image_paths:
+            rgb_dir = self.root / split / "images" / "rgb"
+            raise FileNotFoundError(f"No RGB images found in: {rgb_dir}")
 
     def __len__(self):
         return len(self.image_paths)
@@ -72,7 +76,7 @@ class AgricultureVisionDataset(Dataset):
         if not self.use_nir:
             return image
 
-        nir_path = self.root / self.split / "nir" / f"{image_path.stem}.jpg"
+        nir_path = self.root / self.split / "images" / "nir" / f"{image_path.stem}.jpg"
         nir = cv2.imread(str(nir_path), cv2.IMREAD_GRAYSCALE)
         if nir is None:
             raise FileNotFoundError(f"Could not read NIR image: {nir_path}")
