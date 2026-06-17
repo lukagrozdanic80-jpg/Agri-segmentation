@@ -4,11 +4,14 @@ data:
   root: data/agriculture-vision
   image_size: 512
   num_classes: 7
+  use_nir: false
+  return_valid_mask: true
 
 model:
   architecture: unet
   encoder: resnet50
   encoder_weights: imagenet
+  in_channels: 3
 
 training:
   epochs: 30

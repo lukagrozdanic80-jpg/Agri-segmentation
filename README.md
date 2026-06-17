@@ -45,6 +45,30 @@ The dataset is not committed to Git. Download Agriculture Vision separately and 
 
 Dataset: https://huggingface.co/datasets/shi-labs/Agriculture-Vision
 
+Expected local layout:
+
+```text
+data/agriculture-vision/
+  train/
+    images/
+    labels/
+      cloud_shadow/
+      double_plant/
+      planter_skip/
+      standing_water/
+      waterway/
+      weed_cluster/
+    masks/
+    nir/              Optional, used only when use_nir=true
+  val/
+    images/
+    labels/
+    masks/
+    nir/
+```
+
+`src/dataset.py` merges the class-specific binary masks into a single multiclass target mask with class IDs `0..6`. The valid-region mask can also be returned so loss and mIoU ignore pixels outside the evaluated area.
+
 ## First Milestones
 
 1. Prepare dataset loading and mask merging.

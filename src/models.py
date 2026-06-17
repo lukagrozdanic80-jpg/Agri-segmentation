@@ -1,14 +1,14 @@
 import segmentation_models_pytorch as smp
 
 
-def build_model(architecture, encoder, num_classes, encoder_weights="imagenet"):
+def build_model(architecture, encoder, num_classes, encoder_weights="imagenet", in_channels=3):
     architecture = architecture.lower()
 
     if architecture == "unet":
         return smp.Unet(
             encoder_name=encoder,
             encoder_weights=encoder_weights,
-            in_channels=3,
+            in_channels=in_channels,
             classes=num_classes,
         )
 
