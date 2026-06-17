@@ -8,13 +8,20 @@ from torch.utils.data import Dataset
 
 CLASS_NAMES = [
     "background",
-    "cloud_shadow",
     "double_plant",
     "planter_skip",
     "standing_water",
     "waterway",
     "weed_cluster",
 ]
+
+LABEL_DIR_NAMES = {
+    "double_plant": "double_plant",
+    "planter_skip": "planter_skip",
+    "standing_water": "water",
+    "waterway": "waterway",
+    "weed_cluster": "weed_cluster",
+}
 
 
 class AgricultureVisionDataset(Dataset):
@@ -89,7 +96,8 @@ class AgricultureVisionDataset(Dataset):
         labels_dir = self.root / self.split / "labels"
 
         for class_index, class_name in enumerate(CLASS_NAMES[1:], start=1):
-            class_mask_path = labels_dir / class_name / f"{sample_id}.png"
+            label_dir_name = LABEL_DIR_NAMES[class_name]
+            class_mask_path = labels_dir / label_dir_name / f"{sample_id}.png"
             if not class_mask_path.exists():
                 continue
 
