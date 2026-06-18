@@ -20,6 +20,7 @@ def parse_args():
     parser.add_argument("--epochs", type=int, default=None, help="Override number of epochs.")
     parser.add_argument("--limit-train-batches", type=int, default=None)
     parser.add_argument("--limit-val-batches", type=int, default=None)
+    parser.add_argument("--resume", default=None, help="Path to a checkpoint to resume from.")
     return parser.parse_args()
 
 
@@ -137,6 +138,19 @@ def save_checkpoint(path, model, optimizer, scheduler, epoch, best_miou, config)
     torch.save(checkpoint, path)
 
 
+def load_checkpoint(path, model, optimizer, scheduler, device):
+    checkpoint = torch.load(path, map_location=device)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+    if scheduler is not None and checkpoint.get("scheduler_state_dict") is not None:
+        scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+
+    start_epoch = checkpoint["epoch"] + 1
+    best_miou = checkpoint.get("best_miou", 0.0)
+    return start_epoch, best_miou
+
+
 def main():
     args = parse_args()
     config_path = Path(args.config)
@@ -185,14 +199,29 @@ def main():
         T_max=training_config["epochs"],
     )
 
+    start_epoch = 1
     best_miou = 0.0
     best_checkpoint_path = output_dir / "best_unet_resnet50.pth"
+
+    if args.resume:
+        start_epoch, best_miou = load_checkpoint(
+            args.resume,
+            model,
+            optimizer,
+            scheduler,
+            device,
+        )
+        print(f"Resumed from checkpoint: {args.resume}")
+        print(f"Starting epoch: {start_epoch}")
+        print(f"Best validation mIoU so far: {best_miou:.4f}")
 
     print(f"Device: {device}")
     print(f"Train batches: {len(train_loader)}")
     print(f"Val batches: {len(val_loader)}")
 
-    for epoch in range(1, training_config["epochs"] + 1):
+    end_epoch = start_epoch + training_config["epochs"] - 1
+
+    for epoch in range(start_epoch, end_epoch + 1):
         train_loss = train_one_epoch(
             model,
             train_loader,
@@ -212,7 +241,7 @@ def main():
         scheduler.step()
 
         print(
-            f"Epoch {epoch:03d}/{training_config['epochs']} "
+            f"Epoch {epoch:03d}/{end_epoch} "
             f"train_loss={train_loss:.4f} "
             f"val_loss={val_loss:.4f} "
             f"val_miou={val_miou:.4f}"
