@@ -1,13 +1,140 @@
 import argparse
 from pathlib import Path
 
+import torch
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 import yaml
+
+from dataset import AgricultureVisionDataset
+from losses import CombinedSegmentationLoss
+from metrics import mean_iou
+from models import build_model
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a segmentation model.")
     parser.add_argument("--config", default="configs/baseline_unet_resnet50.yaml")
+    parser.add_argument("--data-root", default=None, help="Override dataset root from config.")
+    parser.add_argument("--output-dir", default=None, help="Override output directory.")
+    parser.add_argument("--epochs", type=int, default=None, help="Override number of epochs.")
+    parser.add_argument("--limit-train-batches", type=int, default=None)
+    parser.add_argument("--limit-val-batches", type=int, default=None)
     return parser.parse_args()
+
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+
+def move_batch_to_device(batch, device):
+    images = batch["image"].to(device, non_blocking=True)
+    masks = batch["mask"].to(device, non_blocking=True)
+    valid_masks = batch.get("valid_mask")
+
+    if valid_masks is not None:
+        valid_masks = valid_masks.to(device, non_blocking=True)
+
+    return images, masks, valid_masks
+
+
+def train_one_epoch(model, dataloader, criterion, optimizer, device, limit_batches=None):
+    model.train()
+    total_loss = 0.0
+    num_batches = 0
+
+    progress = tqdm(dataloader, desc="Train", leave=False)
+    for batch_index, batch in enumerate(progress, start=1):
+        images, masks, valid_masks = move_batch_to_device(batch, device)
+
+        optimizer.zero_grad(set_to_none=True)
+        logits = model(images)
+        loss = criterion(logits, masks, valid_mask=valid_masks)
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss.item()
+        num_batches += 1
+        progress.set_postfix(loss=f"{loss.item():.4f}")
+
+        if limit_batches is not None and batch_index >= limit_batches:
+            break
+
+    return total_loss / max(num_batches, 1)
+
+
+@torch.no_grad()
+def validate(model, dataloader, criterion, device, num_classes, limit_batches=None):
+    model.eval()
+    total_loss = 0.0
+    total_miou = 0.0
+    num_batches = 0
+
+    progress = tqdm(dataloader, desc="Val", leave=False)
+    for batch_index, batch in enumerate(progress, start=1):
+        images, masks, valid_masks = move_batch_to_device(batch, device)
+
+        logits = model(images)
+        loss = criterion(logits, masks, valid_mask=valid_masks)
+        miou = mean_iou(logits, masks, num_classes=num_classes, valid_mask=valid_masks)
+
+        total_loss += loss.item()
+        total_miou += miou.item()
+        num_batches += 1
+        progress.set_postfix(loss=f"{loss.item():.4f}", miou=f"{miou.item():.4f}")
+
+        if limit_batches is not None and batch_index >= limit_batches:
+            break
+
+    return total_loss / num_batches, total_miou / num_batches
+
+
+def build_dataloaders(config):
+    data_config = config["data"]
+    training_config = config["training"]
+
+    train_dataset = AgricultureVisionDataset(
+        root=data_config["root"],
+        split="train",
+        use_nir=data_config.get("use_nir", False),
+        return_valid_mask=data_config.get("return_valid_mask", True),
+    )
+    val_dataset = AgricultureVisionDataset(
+        root=data_config["root"],
+        split="val",
+        use_nir=data_config.get("use_nir", False),
+        return_valid_mask=data_config.get("return_valid_mask", True),
+    )
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=training_config["batch_size"],
+        shuffle=True,
+        num_workers=training_config.get("num_workers", 2),
+        pin_memory=torch.cuda.is_available(),
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=training_config["batch_size"],
+        shuffle=False,
+        num_workers=training_config.get("num_workers", 2),
+        pin_memory=torch.cuda.is_available(),
+    )
+
+    return train_loader, val_loader
+
+
+def save_checkpoint(path, model, optimizer, scheduler, epoch, best_miou, config):
+    checkpoint = {
+        "epoch": epoch,
+        "best_miou": best_miou,
+        "model_state_dict": model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "scheduler_state_dict": scheduler.state_dict() if scheduler is not None else None,
+        "config": config,
+    }
+    torch.save(checkpoint, path)
 
 
 def main():
@@ -17,9 +144,94 @@ def main():
     with config_path.open("r", encoding="utf-8") as file:
         config = yaml.safe_load(file)
 
-    print("Loaded training config:")
-    print(yaml.safe_dump(config, sort_keys=False))
-    print("Training loop will be implemented in the next milestone.")
+    if args.data_root:
+        config["data"]["root"] = args.data_root
+
+    if args.epochs:
+        config["training"]["epochs"] = args.epochs
+
+    output_dir = Path(args.output_dir or config["training"].get("output_dir", "outputs"))
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    set_seed(config.get("seed", 42))
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    train_loader, val_loader = build_dataloaders(config)
+
+    model_config = config["model"]
+    data_config = config["data"]
+    model = build_model(
+        architecture=model_config["architecture"],
+        encoder=model_config["encoder"],
+        encoder_weights=model_config.get("encoder_weights", "imagenet"),
+        in_channels=model_config.get("in_channels", 3),
+        num_classes=data_config["num_classes"],
+    ).to(device)
+
+    loss_config = config["loss"]
+    criterion = CombinedSegmentationLoss(
+        ce_weight=loss_config.get("ce_weight", 1.0),
+        dice_weight=loss_config.get("dice_weight", 1.0),
+    )
+
+    training_config = config["training"]
+    optimizer = torch.optim.AdamW(
+        model.parameters(),
+        lr=training_config["learning_rate"],
+        weight_decay=training_config["weight_decay"],
+    )
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer,
+        T_max=training_config["epochs"],
+    )
+
+    best_miou = 0.0
+    best_checkpoint_path = output_dir / "best_unet_resnet50.pth"
+
+    print(f"Device: {device}")
+    print(f"Train batches: {len(train_loader)}")
+    print(f"Val batches: {len(val_loader)}")
+
+    for epoch in range(1, training_config["epochs"] + 1):
+        train_loss = train_one_epoch(
+            model,
+            train_loader,
+            criterion,
+            optimizer,
+            device,
+            limit_batches=args.limit_train_batches,
+        )
+        val_loss, val_miou = validate(
+            model,
+            val_loader,
+            criterion,
+            device,
+            num_classes=data_config["num_classes"],
+            limit_batches=args.limit_val_batches,
+        )
+        scheduler.step()
+
+        print(
+            f"Epoch {epoch:03d}/{training_config['epochs']} "
+            f"train_loss={train_loss:.4f} "
+            f"val_loss={val_loss:.4f} "
+            f"val_miou={val_miou:.4f}"
+        )
+
+        if val_miou > best_miou:
+            best_miou = val_miou
+            save_checkpoint(
+                best_checkpoint_path,
+                model,
+                optimizer,
+                scheduler,
+                epoch,
+                best_miou,
+                config,
+            )
+            print(f"Saved best checkpoint: {best_checkpoint_path}")
+
+    print(f"Best validation mIoU: {best_miou:.4f}")
 
 
 if __name__ == "__main__":
