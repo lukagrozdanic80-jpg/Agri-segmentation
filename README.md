@@ -76,3 +76,13 @@ data/agriculture-vision/
 3. Train the U-Net + ResNet-50 baseline.
 4. Add augmentations and compare metrics.
 5. Evaluate with mean IoU.
+
+## Evaluation
+
+After training, evaluate a saved checkpoint and export prediction examples:
+
+```powershell
+python src/evaluate.py --checkpoint outputs/best_unet_resnet50.pth --config configs/baseline_unet_resnet50.yaml
+```
+
+Evaluation writes metrics to `outputs/evaluation/metrics.txt` and saves visual examples under `outputs/evaluation/samples/`.
