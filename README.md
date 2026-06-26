@@ -86,3 +86,13 @@ python src/evaluate.py --checkpoint outputs/best_unet_resnet50.pth --config conf
 ```
 
 Evaluation writes metrics to `outputs/evaluation/metrics.txt` and saves visual examples under `outputs/evaluation/samples/`.
+
+## Augmentation Experiment
+
+Train the same U-Net + ResNet-50 baseline with train-only augmentations:
+
+```powershell
+python src/train.py --config configs/unet_resnet50_aug.yaml
+```
+
+For a fair comparison, use the same number of epochs and dataset split as the non-augmented baseline.

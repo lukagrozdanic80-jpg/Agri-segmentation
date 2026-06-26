@@ -10,6 +10,7 @@ from dataset import AgricultureVisionDataset
 from losses import CombinedSegmentationLoss
 from metrics import mean_iou
 from models import build_model
+from transforms import build_train_transforms
 
 
 def parse_args():
@@ -94,10 +95,12 @@ def validate(model, dataloader, criterion, device, num_classes, limit_batches=No
 def build_dataloaders(config):
     data_config = config["data"]
     training_config = config["training"]
+    train_transforms = build_train_transforms(config.get("augmentations"))
 
     train_dataset = AgricultureVisionDataset(
         root=data_config["root"],
         split="train",
+        transforms=train_transforms,
         use_nir=data_config.get("use_nir", False),
         return_valid_mask=data_config.get("return_valid_mask", True),
     )
