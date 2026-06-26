@@ -95,4 +95,10 @@ Train the same U-Net + ResNet-50 baseline with train-only augmentations:
 python src/train.py --config configs/unet_resnet50_aug.yaml
 ```
 
+Run a lighter augmentation variant for comparison:
+
+```powershell
+python src/train.py --config configs/unet_resnet50_aug_light.yaml
+```
+
 For a fair comparison, use the same number of epochs and dataset split as the non-augmented baseline.

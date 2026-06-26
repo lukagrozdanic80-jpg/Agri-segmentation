@@ -1,0 +1,46 @@
+seed: 42
+
+data:
+  root: data/agriculture-vision
+  image_size: 512
+  num_classes: 6
+  use_nir: false
+  return_valid_mask: true
+
+model:
+  architecture: unet
+  encoder: resnet50
+  encoder_weights: imagenet
+  in_channels: 3
+
+training:
+  epochs: 30
+  batch_size: 8
+  num_workers: 2
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  optimizer: adamw
+  scheduler: cosine
+  output_dir: outputs_aug_light
+
+loss:
+  ce_weight: 1.0
+  dice_weight: 1.0
+
+augmentations:
+  enabled: true
+  horizontal_flip_p: 0.5
+  vertical_flip_p: 0.3
+  rotate90_p: 0.3
+  brightness_limit: 0.1
+  contrast_limit: 0.1
+  brightness_contrast_p: 0.2
+  gauss_noise_p: 0.1
+
+classes:
+  - background
+  - double_plant
+  - planter_skip
+  - standing_water
+  - waterway
+  - weed_cluster
