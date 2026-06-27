@@ -107,4 +107,10 @@ Run the augmented baseline with class-weighted cross-entropy:
 python src/train.py --config configs/unet_resnet50_aug_weighted.yaml
 ```
 
+Run a softer class-weighted variant if full weights are unstable:
+
+```powershell
+python src/train.py --config configs/unet_resnet50_aug_weighted_soft.yaml
+```
+
 For a fair comparison, use the same number of epochs and dataset split as the non-augmented baseline.
