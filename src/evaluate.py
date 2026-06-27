@@ -201,7 +201,8 @@ def main():
     criterion = CombinedSegmentationLoss(
         ce_weight=loss_config.get("ce_weight", 1.0),
         dice_weight=loss_config.get("dice_weight", 1.0),
-    )
+        class_weights=loss_config.get("class_weights"),
+    ).to(device)
 
     val_loss, val_miou, saved_samples = evaluate(
         model=model,

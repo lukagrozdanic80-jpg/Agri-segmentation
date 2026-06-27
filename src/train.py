@@ -189,7 +189,8 @@ def main():
     criterion = CombinedSegmentationLoss(
         ce_weight=loss_config.get("ce_weight", 1.0),
         dice_weight=loss_config.get("dice_weight", 1.0),
-    )
+        class_weights=loss_config.get("class_weights"),
+    ).to(device)
 
     training_config = config["training"]
     optimizer = torch.optim.AdamW(

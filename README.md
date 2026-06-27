@@ -101,4 +101,10 @@ Run a lighter augmentation variant for comparison:
 python src/train.py --config configs/unet_resnet50_aug_light.yaml
 ```
 
+Run the augmented baseline with class-weighted cross-entropy:
+
+```powershell
+python src/train.py --config configs/unet_resnet50_aug_weighted.yaml
+```
+
 For a fair comparison, use the same number of epochs and dataset split as the non-augmented baseline.
