@@ -127,6 +127,27 @@ Best validation mIoU: 0.4107
 
 Conclusion: soft class weights slightly improved over the full class-weighted setup, but still underperformed the standard augmentation result in preliminary testing.
 
+## U-Net + ResNet-50 with Augmentations and ImageNet Normalization
+
+Config: `configs/unet_resnet50_aug.yaml`
+Setup: partial experiment with ImageNet mean/std normalization enabled
+
+Normalization:
+
+| Channel | Mean | Std |
+|---|---:|---:|
+| R | 0.485 | 0.229 |
+| G | 0.456 | 0.224 |
+| B | 0.406 | 0.225 |
+
+| Epoch | Train Loss | Val Loss | Val mIoU | Notes |
+|---:|---:|---:|---:|---|
+| 1 | 1.0233 | 0.5533 | 0.4509 | Partial experiment |
+
+Best validation mIoU: 0.4509
+
+Conclusion: ImageNet normalization was added as correct preprocessing for ImageNet-pretrained encoders. The initial partial result was lower than the best full augmentation run, so a full normalization-only run was not prioritized before testing EfficientNet-B3.
+
 ## Current Comparison
 
 | Experiment | Best Val mIoU |
@@ -136,3 +157,4 @@ Conclusion: soft class weights slightly improved over the full class-weighted se
 | U-Net + ResNet-50 with augmentations | 0.5331 |
 | U-Net + ResNet-50 with weighted loss, partial | 0.4007 |
 | U-Net + ResNet-50 with soft weighted loss, partial | 0.4107 |
+| U-Net + ResNet-50 with ImageNet normalization, partial | 0.4509 |
