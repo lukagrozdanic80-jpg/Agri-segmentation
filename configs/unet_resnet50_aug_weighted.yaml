@@ -23,14 +23,28 @@ training:
   weight_decay: 0.0001
   optimizer: adamw
   scheduler: cosine
-  output_dir: outputs
+  output_dir: outputs_aug_weighted
 
 loss:
   ce_weight: 1.0
   dice_weight: 1.0
+  class_weights:
+    - 0.1103
+    - 0.7869
+    - 2.7620
+    - 0.7780
+    - 1.1194
+    - 0.4434
 
 augmentations:
-  enabled: false
+  enabled: true
+  horizontal_flip_p: 0.5
+  vertical_flip_p: 0.5
+  rotate90_p: 0.5
+  brightness_limit: 0.2
+  contrast_limit: 0.2
+  brightness_contrast_p: 0.3
+  gauss_noise_p: 0.2
 
 classes:
   - background

@@ -59,6 +59,8 @@ def build_val_loader(config, batch_size=None, num_workers=None):
         split="val",
         use_nir=data_config.get("use_nir", False),
         return_valid_mask=data_config.get("return_valid_mask", True),
+        image_mean=data_config.get("image_mean"),
+        image_std=data_config.get("image_std"),
     )
 
     return DataLoader(
@@ -94,17 +96,23 @@ def colorize_mask(mask):
     return COLORS[mask.clip(min=0, max=len(COLORS) - 1)]
 
 
-def image_to_numpy(image_tensor):
+def image_to_numpy(image_tensor, image_mean=None, image_std=None):
     image = image_tensor.detach().cpu().float().numpy()
     image = np.transpose(image[:3], (1, 2, 0))
+
+    if image_mean is not None and image_std is not None:
+        mean = np.asarray(image_mean, dtype=np.float32)
+        std = np.asarray(image_std, dtype=np.float32)
+        image = image * std + mean
+
     return np.clip(image, 0.0, 1.0)
 
 
-def save_prediction_sample(image, target, prediction, sample_id, output_dir):
+def save_prediction_sample(image, target, prediction, sample_id, output_dir, image_mean=None, image_std=None):
     output_dir.mkdir(parents=True, exist_ok=True)
 
     fig, axes = plt.subplots(1, 3, figsize=(12, 4))
-    axes[0].imshow(image_to_numpy(image))
+    axes[0].imshow(image_to_numpy(image, image_mean=image_mean, image_std=image_std))
     axes[0].set_title("Image")
     axes[1].imshow(colorize_mask(target.detach().cpu().numpy()))
     axes[1].set_title("Ground truth")
@@ -120,7 +128,18 @@ def save_prediction_sample(image, target, prediction, sample_id, output_dir):
 
 
 @torch.no_grad()
-def evaluate(model, dataloader, criterion, device, num_classes, output_dir, save_samples, limit_batches=None):
+def evaluate(
+    model,
+    dataloader,
+    criterion,
+    device,
+    num_classes,
+    output_dir,
+    save_samples,
+    image_mean=None,
+    image_std=None,
+    limit_batches=None,
+):
     model.eval()
     total_loss = 0.0
     total_miou = 0.0
@@ -153,6 +172,8 @@ def evaluate(model, dataloader, criterion, device, num_classes, output_dir, save
                     predictions[sample_index],
                     sample_id,
                     samples_dir,
+                    image_mean=image_mean,
+                    image_std=image_std,
                 )
                 saved_samples += 1
 
@@ -201,7 +222,8 @@ def main():
     criterion = CombinedSegmentationLoss(
         ce_weight=loss_config.get("ce_weight", 1.0),
         dice_weight=loss_config.get("dice_weight", 1.0),
-    )
+        class_weights=loss_config.get("class_weights"),
+    ).to(device)
 
     val_loss, val_miou, saved_samples = evaluate(
         model=model,
@@ -211,6 +233,8 @@ def main():
         num_classes=config["data"]["num_classes"],
         output_dir=output_dir,
         save_samples=args.save_samples,
+        image_mean=config["data"].get("image_mean"),
+        image_std=config["data"].get("image_std"),
         limit_batches=args.limit_batches,
     )
     results_path = write_results(

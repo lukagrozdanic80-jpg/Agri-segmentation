@@ -103,12 +103,16 @@ def build_dataloaders(config):
         transforms=train_transforms,
         use_nir=data_config.get("use_nir", False),
         return_valid_mask=data_config.get("return_valid_mask", True),
+        image_mean=data_config.get("image_mean"),
+        image_std=data_config.get("image_std"),
     )
     val_dataset = AgricultureVisionDataset(
         root=data_config["root"],
         split="val",
         use_nir=data_config.get("use_nir", False),
         return_valid_mask=data_config.get("return_valid_mask", True),
+        image_mean=data_config.get("image_mean"),
+        image_std=data_config.get("image_std"),
     )
 
     train_loader = DataLoader(
@@ -189,7 +193,8 @@ def main():
     criterion = CombinedSegmentationLoss(
         ce_weight=loss_config.get("ce_weight", 1.0),
         dice_weight=loss_config.get("dice_weight", 1.0),
-    )
+        class_weights=loss_config.get("class_weights"),
+    ).to(device)
 
     training_config = config["training"]
     optimizer = torch.optim.AdamW(

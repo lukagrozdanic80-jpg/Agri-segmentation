@@ -34,12 +34,16 @@ class AgricultureVisionDataset(Dataset):
         transforms=None,
         use_nir=False,
         return_valid_mask=False,
+        image_mean=None,
+        image_std=None,
     ):
         self.root = Path(root)
         self.split = split
         self.transforms = transforms
         self.use_nir = use_nir
         self.return_valid_mask = return_valid_mask
+        self.image_mean = image_mean
+        self.image_std = image_std
         self.image_paths = sorted((self.root / split / "images" / "rgb").glob("*.jpg"))
 
         if not self.image_paths:
@@ -115,8 +119,13 @@ class AgricultureVisionDataset(Dataset):
 
         return valid_mask
 
-    @staticmethod
-    def _to_image_tensor(image):
+    def _to_image_tensor(self, image):
         image = image.astype(np.float32) / 255.0
+
+        if self.image_mean is not None and self.image_std is not None:
+            mean = np.asarray(self.image_mean, dtype=np.float32)
+            std = np.asarray(self.image_std, dtype=np.float32)
+            image = (image - mean) / std
+
         image = np.transpose(image, (2, 0, 1))
         return torch.from_numpy(image)

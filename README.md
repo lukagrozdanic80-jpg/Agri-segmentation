@@ -69,6 +69,8 @@ data/agriculture-vision/
 
 `src/dataset.py` merges the class-specific binary masks into a single multiclass target mask with class IDs `0..6`. The valid-region mask can also be returned so loss and mIoU ignore pixels outside the evaluated area.
 
+Input images are scaled to `[0, 1]` and can be normalized with ImageNet mean/std values through `data.image_mean` and `data.image_std` in the experiment config. This matches the preprocessing expected by ImageNet-pretrained encoders.
+
 ## First Milestones
 
 1. Prepare dataset loading and mask merging.
@@ -99,6 +101,18 @@ Run a lighter augmentation variant for comparison:
 
 ```powershell
 python src/train.py --config configs/unet_resnet50_aug_light.yaml
+```
+
+Run the augmented baseline with class-weighted cross-entropy:
+
+```powershell
+python src/train.py --config configs/unet_resnet50_aug_weighted.yaml
+```
+
+Run a softer class-weighted variant if full weights are unstable:
+
+```powershell
+python src/train.py --config configs/unet_resnet50_aug_weighted_soft.yaml
 ```
 
 For a fair comparison, use the same number of epochs and dataset split as the non-augmented baseline.
