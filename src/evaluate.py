@@ -79,12 +79,25 @@ def build_val_loader(config, batch_size=None, num_workers=None):
 def build_checkpoint_model(config, checkpoint_path, device):
     model_config = config["model"]
     data_config = config["data"]
+    extra_model_args = {
+        key: value
+        for key, value in model_config.items()
+        if key
+        not in {
+            "architecture",
+            "encoder",
+            "encoder_weights",
+            "in_channels",
+            "checkpoint_name",
+        }
+    }
     model = build_model(
         architecture=model_config["architecture"],
         encoder=model_config["encoder"],
         encoder_weights=None,
         in_channels=model_config.get("in_channels", 3),
         num_classes=data_config["num_classes"],
+        **extra_model_args,
     ).to(device)
 
     checkpoint = torch.load(checkpoint_path, map_location=device)

@@ -145,6 +145,31 @@ def save_checkpoint(path, model, optimizer, scheduler, epoch, best_miou, config)
     torch.save(checkpoint, path)
 
 
+def build_model_from_config(config, device):
+    model_config = config["model"]
+    data_config = config["data"]
+    extra_model_args = {
+        key: value
+        for key, value in model_config.items()
+        if key
+        not in {
+            "architecture",
+            "encoder",
+            "encoder_weights",
+            "in_channels",
+            "checkpoint_name",
+        }
+    }
+    return build_model(
+        architecture=model_config["architecture"],
+        encoder=model_config["encoder"],
+        encoder_weights=model_config.get("encoder_weights", "imagenet"),
+        in_channels=model_config.get("in_channels", 3),
+        num_classes=data_config["num_classes"],
+        **extra_model_args,
+    ).to(device)
+
+
 def load_checkpoint(path, model, optimizer, scheduler, device):
     checkpoint = torch.load(path, map_location=device)
     model.load_state_dict(checkpoint["model_state_dict"])
@@ -181,13 +206,7 @@ def main():
 
     model_config = config["model"]
     data_config = config["data"]
-    model = build_model(
-        architecture=model_config["architecture"],
-        encoder=model_config["encoder"],
-        encoder_weights=model_config.get("encoder_weights", "imagenet"),
-        in_channels=model_config.get("in_channels", 3),
-        num_classes=data_config["num_classes"],
-    ).to(device)
+    model = build_model_from_config(config, device)
 
     loss_config = config["loss"]
     criterion = CombinedSegmentationLoss(
@@ -209,7 +228,10 @@ def main():
 
     start_epoch = 1
     best_miou = 0.0
-    best_checkpoint_path = output_dir / "best_unet_resnet50.pth"
+    best_checkpoint_path = output_dir / model_config.get(
+        "checkpoint_name",
+        "best_unet_resnet50.pth",
+    )
 
     if args.resume:
         start_epoch, best_miou = load_checkpoint(

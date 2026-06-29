@@ -1,0 +1,52 @@
+seed: 42
+
+data:
+  root: data/agriculture-vision
+  image_size: 512
+  num_classes: 6
+  use_nir: false
+  return_valid_mask: true
+  image_mean: [0.485, 0.456, 0.406]
+  image_std: [0.229, 0.224, 0.225]
+
+model:
+  architecture: dino_vit
+  encoder: facebook/dinov3-vits16-pretrain-lvd1689m
+  encoder_weights: pretrained
+  in_channels: 3
+  freeze_backbone: true
+  decoder_channels: 256
+  trust_remote_code: true
+  checkpoint_name: best_dino_v3_vits16.pth
+
+training:
+  epochs: 30
+  batch_size: 2
+  num_workers: 2
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  optimizer: adamw
+  scheduler: cosine
+  output_dir: outputs_dino_v3_vits16
+
+loss:
+  ce_weight: 1.0
+  dice_weight: 1.0
+
+augmentations:
+  enabled: true
+  horizontal_flip_p: 0.5
+  vertical_flip_p: 0.5
+  rotate90_p: 0.5
+  brightness_limit: 0.2
+  contrast_limit: 0.2
+  brightness_contrast_p: 0.3
+  gauss_noise_p: 0.2
+
+classes:
+  - background
+  - double_plant
+  - planter_skip
+  - standing_water
+  - waterway
+  - weed_cluster
