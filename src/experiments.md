@@ -148,6 +148,28 @@ Best validation mIoU: 0.4509
 
 Conclusion: ImageNet normalization was added as correct preprocessing for ImageNet-pretrained encoders. The initial partial result was lower than the best full augmentation run, so a full normalization-only run was not prioritized before testing EfficientNet-B3.
 
+## U-Net + EfficientNet-B3 with Augmentations
+
+Config: `configs/unet_efficientnet_b3_aug.yaml`
+Setup: full experiment with 2 epochs on the Agriculture Vision train/val split
+Input: RGB images
+
+| Epoch | Train Loss | Val Loss | Val mIoU | Notes |
+|---:|---:|---:|---:|---|
+| 1 | 0.6917 | 0.3327 | 0.4535 | Saved checkpoint |
+| 2 | 0.5081 | 0.2673 | 0.5587 | Best checkpoint |
+
+Evaluation:
+
+| Validation Loss | Validation mIoU | Saved Samples |
+|---:|---:|---:|
+| 0.2673 | 0.5587 | 8 |
+
+Best checkpoint: epoch 2  
+Best validation mIoU: 0.5587  
+Improvement over best ResNet-50 augmentation result: +0.0256
+
+Conclusion: EfficientNet-B3 achieved the best validation mIoU so far and improved over the previous ResNet-50 augmentation experiment.
 ## Current Comparison
 
 | Experiment | Best Val mIoU |
@@ -158,3 +180,5 @@ Conclusion: ImageNet normalization was added as correct preprocessing for ImageN
 | U-Net + ResNet-50 with weighted loss, partial | 0.4007 |
 | U-Net + ResNet-50 with soft weighted loss, partial | 0.4107 |
 | U-Net + ResNet-50 with ImageNet normalization, partial | 0.4509 |
+| U-Net + EfficientNet-B3 with augmentations | 0.5587 |
+
