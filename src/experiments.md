@@ -170,6 +170,32 @@ Best validation mIoU: 0.5587
 Improvement over best ResNet-50 augmentation result: +0.0256
 
 Conclusion: EfficientNet-B3 achieved the best validation mIoU so far and improved over the previous ResNet-50 augmentation experiment.
+
+## DINOv3 ViT-S/16 Partial Training
+
+Config: `configs/dino_v3_vits16_seg.yaml`
+Checkpoint: `outputs_dino_v3_partial/best_dino_v3_vits16.pth`
+Setup: partial training with 1000 train batches and full validation evaluation
+Input: RGB images
+Backbone: pretrained `facebook/dinov3-vits16-pretrain-lvd1689m`
+
+Training result:
+
+| Train Loss | Val Loss | Val mIoU | Notes |
+|---:|---:|---:|---|
+| 0.5846 | 0.4154 | 0.7298 | Partial training validation during training |
+
+Full validation evaluation:
+
+| Validation Loss | Validation mIoU | Saved Samples |
+|---:|---:|---:|
+| 0.3453 | 0.7169 | 8 |
+
+Best validation mIoU: 0.7169
+Improvement over EfficientNet-B3 result: +0.1582
+
+Conclusion: DINOv3 produced the best result so far. Even with partial training, it outperformed the previous EfficientNet-B3 experiment on the full validation evaluation.
+
 ## Current Comparison
 
 | Experiment | Best Val mIoU |
@@ -181,4 +207,4 @@ Conclusion: EfficientNet-B3 achieved the best validation mIoU so far and improve
 | U-Net + ResNet-50 with soft weighted loss, partial | 0.4107 |
 | U-Net + ResNet-50 with ImageNet normalization, partial | 0.4509 |
 | U-Net + EfficientNet-B3 with augmentations | 0.5587 |
-
+| DINOv3 ViT-S/16 partial training, full validation | 0.7169 |
