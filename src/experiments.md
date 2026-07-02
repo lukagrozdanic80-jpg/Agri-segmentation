@@ -196,6 +196,31 @@ Improvement over EfficientNet-B3 result: +0.1582
 
 Conclusion: DINOv3 produced the best result so far. Even with partial training, it outperformed the previous EfficientNet-B3 experiment on the full validation evaluation.
 
+## DINOv3 ViT-S/16 Full 1 Epoch
+
+Config: `configs/dino_v3_vits16_seg.yaml`
+Checkpoint: `outputs_dino_v3_full_1ep/best_dino_v3_vits16.pth`
+Setup: full 1 epoch training on the Agriculture Vision train/val split
+Input: RGB images
+Backbone: pretrained `facebook/dinov3-vits16-pretrain-lvd1689m`
+
+Training result:
+
+| Epoch | Train Loss | Val Loss | Val mIoU | Notes |
+|---:|---:|---:|---:|---|
+| 1 | 0.4237 | 0.2861 | 0.6943 | Best checkpoint |
+
+Evaluation:
+
+| Validation Loss | Validation mIoU | Saved Samples |
+|---:|---:|---:|
+| 0.2861 | 0.6943 | 8 |
+
+Best validation mIoU: 0.6943
+Improvement over EfficientNet-B3 result: +0.1356
+
+Conclusion: The full 1 epoch DINOv3 run confirmed that the DINOv3 architecture outperforms the CNN-based experiments. Its result was slightly lower than the partial DINOv3 checkpoint evaluated on the full validation set, but it remains the best fully trained single-epoch experiment.
+
 ## Current Comparison
 
 | Experiment | Best Val mIoU |
@@ -208,3 +233,4 @@ Conclusion: DINOv3 produced the best result so far. Even with partial training, 
 | U-Net + ResNet-50 with ImageNet normalization, partial | 0.4509 |
 | U-Net + EfficientNet-B3 with augmentations | 0.5587 |
 | DINOv3 ViT-S/16 partial training, full validation | 0.7169 |
+| DINOv3 ViT-S/16 full 1 epoch | 0.6943 |
