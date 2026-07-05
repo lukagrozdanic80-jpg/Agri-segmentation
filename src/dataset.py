@@ -25,7 +25,6 @@ LABEL_DIR_NAMES = {
 
 
 class AgricultureVisionDataset(Dataset):
-    """Agriculture Vision dataset for multiclass semantic segmentation."""
 
     def __init__(
         self,
@@ -95,7 +94,6 @@ class AgricultureVisionDataset(Dataset):
         return np.dstack([image, nir])
 
     def _load_mask(self, sample_id, shape):
-        """Merge class-specific binary masks into one multiclass mask."""
         mask = np.zeros(shape, dtype=np.uint8)
         labels_dir = self.root / self.split / "labels"
 
