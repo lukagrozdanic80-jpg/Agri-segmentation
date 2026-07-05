@@ -1,4 +1,4 @@
-# Experiment Log
+﻿# Log 
 
 ## Baseline: U-Net + ResNet-50
 
@@ -20,7 +20,7 @@ Batch size: 8
 Best checkpoint: epoch 1  
 Best validation mIoU: 0.4892
 
-## U-Net + ResNet-50 with Augmentations
+## U-Net + ResNet-50 sa augmentacijama
 
 Config: `configs/unet_resnet50_aug.yaml`
 
@@ -39,9 +39,9 @@ Best checkpoint: epoch 1
 Best validation mIoU: 0.5331  
 Improvement over baseline: +0.0439
 
-Conclusion: full augmentations improved validation mIoU compared with the baseline.
+Zakljucak: pune augmentacije su poboljsale validation mIoU u odnosu na baseline.
 
-## U-Net + ResNet-50 with Light Augmentations
+## U-Net + ResNet-50 sa light augmentacijama
 
 Config: `configs/unet_resnet50_aug_light.yaml`
 
@@ -61,9 +61,9 @@ Best validation mIoU: 0.4751
 Difference from baseline: -0.0141  
 Difference from full augmentations: -0.0580
 
-Conclusion: light augmentations did not improve over the baseline, while the stronger augmentation setup produced the best ResNet-50 result so far.
+Zakljucak: light augmentacije nisu poboljsale rezultat u odnosu na baseline, dok je jaci setup augmentacija dao najbolji ResNet-50 rezultat do tada.
 
-## Class Distribution Analysis
+## Analiza raspodjele klasa
 
 Subset: first 2000 training samples
 Valid pixels only: yes
@@ -77,12 +77,12 @@ Valid pixels only: yes
 | 4 | waterway | 4570764 | 0.8724% |
 | 5 | weed_cluster | 29132900 | 5.5605% |
 
-Conclusion: the dataset is highly imbalanced. The rarest class is `planter_skip`, so class-weighted cross-entropy was tested as a follow-up experiment.
+Zakljucak: dataset je veoma neuravnotezen. Najrjedja klasa je `planter_skip`, pa je class-weighted cross-entropy testiran kao sljedeci eksperiment.
 
-## U-Net + ResNet-50 with Augmentations and Class-Weighted Loss
+## U-Net + ResNet-50 sa augmentacijama i class-weighted loss
 
 Config: `configs/unet_resnet50_aug_weighted.yaml`
-Setup: partial experiment with 1000 train batches and 300 validation batches
+Setup: parcijalni eksperiment sa 1000 train batch-eva i 300 validation batch-eva
 
 Class weights:
 
@@ -101,12 +101,12 @@ Class weights:
 
 Best validation mIoU: 0.4007
 
-Conclusion: full inverse-sqrt class weights were stable enough to train, but the preliminary mIoU was lower than the standard augmentation setup.
+Zakljucak: puni inverse-sqrt class weights su bili dovoljno stabilni za trening, ali je pocetni mIoU bio nizi nego kod standardnog augmentacionog setupa.
 
-## U-Net + ResNet-50 with Augmentations and Soft Class-Weighted Loss
+## U-Net + ResNet-50 sa augmentacijama i soft class-weighted loss
 
 Config: `configs/unet_resnet50_aug_weighted_soft.yaml`
-Setup: partial experiment with 1000 train batches and 300 validation batches
+Setup: parcijalni eksperiment sa 1000 train batch-eva i 300 validation batch-eva
 
 Soft class weights:
 
@@ -125,12 +125,12 @@ Soft class weights:
 
 Best validation mIoU: 0.4107
 
-Conclusion: soft class weights slightly improved over the full class-weighted setup, but still underperformed the standard augmentation result in preliminary testing.
+Zakljucak: soft class weights su malo poboljsali rezultat u odnosu na puni weighted setup, ali su i dalje bili slabiji od standardnog augmentacionog rezultata u pocetnom testiranju.
 
-## U-Net + ResNet-50 with Augmentations and ImageNet Normalization
+## U-Net + ResNet-50 sa augmentacijama i ImageNet normalizacijom
 
 Config: `configs/unet_resnet50_aug.yaml`
-Setup: partial experiment with ImageNet mean/std normalization enabled
+Setup: parcijalni eksperiment sa ukljucenom ImageNet mean/std normalizacijom
 
 Normalization:
 
@@ -146,12 +146,12 @@ Normalization:
 
 Best validation mIoU: 0.4509
 
-Conclusion: ImageNet normalization was added as correct preprocessing for ImageNet-pretrained encoders. The initial partial result was lower than the best full augmentation run, so a full normalization-only run was not prioritized before testing EfficientNet-B3.
+Zakljucak: ImageNet normalizacija je dodata kao ispravan preprocessing za ImageNet-pretrained encodere. Pocetni parcijalni rezultat bio je nizi od najboljeg full augmentation eksperimenta, pa full run samo sa normalizacijom nije bio prioritet prije testiranja EfficientNet-B3 modela.
 
-## U-Net + EfficientNet-B3 with Augmentations
+## U-Net + EfficientNet-B3 sa augmentacijama
 
 Config: `configs/unet_efficientnet_b3_aug.yaml`
-Setup: full experiment with 2 epochs on the Agriculture Vision train/val split
+Setup: full eksperiment sa 2 epohe na Agriculture Vision train/val splitu
 Input: RGB images
 
 | Epoch | Train Loss | Val Loss | Val mIoU | Notes |
@@ -169,13 +169,13 @@ Best checkpoint: epoch 2
 Best validation mIoU: 0.5587  
 Improvement over best ResNet-50 augmentation result: +0.0256
 
-Conclusion: EfficientNet-B3 achieved the best validation mIoU so far and improved over the previous ResNet-50 augmentation experiment.
+Zakljucak: EfficientNet-B3 je postigao najbolji validation mIoU do tada i poboljsao rezultat u odnosu na prethodni ResNet-50 augmentacioni eksperiment.
 
-## DINOv3 ViT-S/16 Partial Training
+## DINOv3 ViT-S/16 parcijalni trening
 
 Config: `configs/dino_v3_vits16_seg.yaml`
 Checkpoint: `outputs_dino_v3_partial/best_dino_v3_vits16.pth`
-Setup: partial training with 1000 train batches and full validation evaluation
+Setup: parcijalni trening sa 1000 train batch-eva i full validation evaluacijom
 Input: RGB images
 Backbone: pretrained `facebook/dinov3-vits16-pretrain-lvd1689m`
 
@@ -194,13 +194,13 @@ Full validation evaluation:
 Best validation mIoU: 0.7169
 Improvement over EfficientNet-B3 result: +0.1582
 
-Conclusion: DINOv3 produced the best result so far. Even with partial training, it outperformed the previous EfficientNet-B3 experiment on the full validation evaluation.
+Zakljucak: DINOv3 je dao najbolji rezultat do tada. Cak i sa parcijalnim treningom, nadmasio je prethodni EfficientNet-B3 eksperiment na full validation evaluaciji.
 
-## DINOv3 ViT-S/16 Full 1 Epoch
+## DINOv3 ViT-S/16 full 1 epoch
 
 Config: `configs/dino_v3_vits16_seg.yaml`
 Checkpoint: `outputs_dino_v3_full_1ep/best_dino_v3_vits16.pth`
-Setup: full 1 epoch training on the Agriculture Vision train/val split
+Setup: full 1 epoch trening na Agriculture Vision train/val splitu
 Input: RGB images
 Backbone: pretrained `facebook/dinov3-vits16-pretrain-lvd1689m`
 
@@ -219,9 +219,9 @@ Evaluation:
 Best validation mIoU: 0.6943
 Improvement over EfficientNet-B3 result: +0.1356
 
-Conclusion: The full 1 epoch DINOv3 run confirmed that the DINOv3 architecture outperforms the CNN-based experiments. Its result was slightly lower than the partial DINOv3 checkpoint evaluated on the full validation set, but it remains the best fully trained single-epoch experiment.
+Zakljucak: full 1 epoch DINOv3 run je potvrdio da DINOv3 arhitektura nadmasuje CNN eksperimente. Rezultat je bio malo nizi od parcijalnog DINOv3 checkpointa evaluiranog na full validation skupu, ali je ostao najbolji potpuno trenirani single-epoch eksperiment.
 
-## Current Comparison
+## Trenutno poredjenje
 
 | Experiment | Best Val mIoU |
 |---|---:|
